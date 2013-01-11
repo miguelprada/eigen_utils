@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package>
+  <name>eigen_utils</name>
+  <version>1.0.0</version>
+  <description>Useful math functions using Eigen</description>
+
+  <maintainer email="mprats@willowgarage.com">Mario Prats</maintainer>
+
+  <license>BSD</license>
+
+  <url>http://ros.org/wiki/eigen_utils</url>
+  
+  <author>Mario Prats</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>eigen</build_depend>
+
+  <run_depend>eigen</run_depend>
+</package>
