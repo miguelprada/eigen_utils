@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(eigen_utils)
 
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS tf tf_conversions roscpp)
 find_package(Eigen)
 
 include_directories(SYSTEM ${EIGEN_INCLUDE_DIRS})
@@ -10,6 +10,10 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 catkin_package(
   INCLUDE_DIRS include ${EIGEN_INCLUDE_DIRS}
   LIBRARIES ${PROJECT_NAME}
+  CATKIN_DEPENDS
+   tf
+   tf_conversions
+   roscpp
 )
 
 add_library(eigen_utils
