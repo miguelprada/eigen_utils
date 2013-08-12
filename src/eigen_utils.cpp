@@ -27,9 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * Author: Mario Prats
+ * Much of this code has been adapted from the ViSP library (http://www.irisa.fr/lagadic/visp)
  */
 
 #include <eigen_utils/eigen_utils.h>
+#include <tf_conversions/tf_eigen.h>
 #include <Eigen/SVD>
 
 namespace eigen_utils {
@@ -63,7 +65,7 @@ Eigen::MatrixXd pseudoinverse(const Eigen::MatrixXd &M, double tolerance)
   return Minv;
 }
 
-void transformToTwist(const Eigen::Affine3d &M, Eigen::VectorXd &pose)
+void transformToPoseVector(const Eigen::Affine3d &M, Eigen::VectorXd &pose)
 {
   pose.resize(6);
 
@@ -118,11 +120,118 @@ void transformToTwist(const Eigen::Affine3d &M, Eigen::VectorXd &pose)
   }
 }
 
-Eigen::VectorXd transformToTwist(const Eigen::Affine3d &M) 
+Eigen::VectorXd transformToPoseVector(const Eigen::Affine3d &M) 
 {
   Eigen::VectorXd twist;
-  transformToTwist(M, twist);
+  transformToPoseVector(M, twist);
   return twist;
+}
+
+
+static const double ang_min_sinc = 1.0e-8;
+static const double ang_min_mc = 2.5e-4;
+
+double f_sinc(double sinx, double x)
+{
+  if (fabs(x) < ang_min_sinc) return 1.0 ;
+  else  return (sinx / x) ;
+}
+
+double f_mcosc(double cosx, double x)
+{
+  if (fabs(x) < ang_min_mc) return 0.5 ;
+  else  return ((1.0 - cosx) / x / x) ;
+}
+
+double f_msinc(double sinx, double x)
+{
+  if (fabs(x) < ang_min_mc) return (1. / 6.0) ;
+  else  return ((1.0 - sinx / x) / x / x) ;
+}
+
+Eigen::Affine3d UThetaToAffine3d(const Eigen::Vector3d &u)
+{
+  Eigen::Affine3d rd;
+  double theta, si, co, sinc, mcosc;
+
+  theta = sqrt(u[0]*u[0] + u[1]*u[1] + u[2]*u[2]);
+  si = sin(theta);
+  co = cos(theta);
+  sinc = f_sinc(si,theta);
+  mcosc = f_mcosc(co,theta);
+
+  rd(0,0) = co + mcosc*u[0]*u[0];
+  rd(0,1) = -sinc*u[2] + mcosc*u[0]*u[1];
+  rd(0,2) = sinc*u[1] + mcosc*u[0]*u[2];
+  rd(1,0) = sinc*u[2] + mcosc*u[1]*u[0];
+  rd(1,1) = co + mcosc*u[1]*u[1];
+  rd(1,2) = -sinc*u[0] + mcosc*u[1]*u[2];
+  rd(2,0) = -sinc*u[1] + mcosc*u[2]*u[0];
+  rd(2,1) = sinc*u[0] + mcosc*u[2]*u[1];
+  rd(2,2) = co + mcosc*u[2]*u[2];
+
+  return rd;
+}
+
+Eigen::Affine3d direct_exponential_map(const Eigen::VectorXd &v, double delta_t)
+{
+  double theta,si,co,sinc,mcosc,msinc;
+  Eigen::Vector3d u;
+  Eigen::Affine3d rd;
+  rd.setIdentity();
+  Eigen::Vector3d dt;
+
+  Eigen::VectorXd v_dt = v * delta_t;
+
+  u[0] = v_dt[3];
+  u[1] = v_dt[4];
+  u[2] = v_dt[5];
+
+  rd = UThetaToAffine3d(u);
+
+  theta = sqrt(u[0]*u[0] + u[1]*u[1] + u[2]*u[2]);
+  si = sin(theta);
+  co = cos(theta);
+  sinc = f_sinc(si,theta);
+  mcosc = f_mcosc(co,theta);
+  msinc = f_msinc(si,theta);
+
+  dt[0] = v_dt[0] * (sinc + u[0]*u[0]*msinc)
+                      + v_dt[1]*(u[0]*u[1]*msinc - u[2]*mcosc)
+                      + v_dt[2]*(u[0]*u[2]*msinc + u[1]*mcosc);
+
+  dt[1] = v_dt[0] * (u[0]*u[1]*msinc + u[2]*mcosc)
+                      + v_dt[1]*(sinc + u[1]*u[1]*msinc)
+                      + v_dt[2]*(u[1]*u[2]*msinc - u[0]*mcosc);
+
+  dt[2] = v_dt[0] * (u[0]*u[2]*msinc - u[1]*mcosc)
+                      + v_dt[1]*(u[1]*u[2]*msinc + u[0]*mcosc)
+                      + v_dt[2]*(sinc + u[2]*u[2]*msinc);
+
+  Eigen::Affine3d Delta;
+  Delta.setIdentity();
+  Delta = rd;
+  Delta(0,3) = dt[0];
+  Delta(1,3) = dt[1];
+  Delta(2,3) = dt[2];
+
+  return Delta;
+}
+
+bool getTransform(const tf::TransformListener &listener, const std::string &target, const std::string source, Eigen::Affine3d &tMs, const ros::Time &timestamp, const ros::Duration &timeout)
+{
+  try {
+    tf::StampedTransform tMs_stamped;
+    if (listener.waitForTransform(target, source, timestamp, timeout))
+    {
+      listener.lookupTransform(target, source, timestamp, tMs_stamped);
+      tf::poseTFToEigen(tMs_stamped, tMs);
+      return true;
+    }
+  } catch (tf::TransformException &ex) {
+    ROS_ERROR("%s",ex.what());
+  }
+  return false;
 }
 
 } // namespace

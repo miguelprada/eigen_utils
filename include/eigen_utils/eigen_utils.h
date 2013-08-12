@@ -34,16 +34,61 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <tf/transform_listener.h>
 
 namespace eigen_utils {
 
+/** Computes the pseudoinverse of a matrix via SVD 
+ * @param M the input matrix
+ * @param Minv[out] the output pseudoinverse matrix
+ * @param tolerance Those singular values smaller than tolerance * max_singular_value are removed
+ */
 void pseudoinverse(const Eigen::MatrixXd &M, Eigen::MatrixXd &Minv, double tolerance = 1.e-06);
 
+/** Computes the pseudoinverse of a matrix via SVD 
+ * @param M the input matrix
+ * @param tolerance Those singular values smaller than tolerance * max_singular_value are removed
+ * @returns the output pseudoinverse matrix
+ */
 Eigen::MatrixXd pseudoinverse(const Eigen::MatrixXd &M, double tolerance = 1.e-06);
 
-void transformToTwist(const Eigen::Affine3d &M, Eigen::VectorXd &pose);
+/** Computes a pose vector in (t utheta) notation from an homogeneous transformation matrix
+ * @param M an homogeneous transformation matrix
+ * @param pose[out] an output 6x1 vector containing the translation and rotation (utheta notation) described by matrix M
+ */
+void transformToPoseVector(const Eigen::Affine3d &M, Eigen::VectorXd &pose);
 
-Eigen::VectorXd transformToTwist(const Eigen::Affine3d &M);
+/** Computes a pose vector in (t utheta) notation from an homogeneous transformation matrix
+ * @param M an homogeneous transformation matrix
+ * @returns a 6x1 vector containing the translation and rotation (utheta notation) described by matrix M
+ */
+Eigen::VectorXd transformToPoseVector(const Eigen::Affine3d &M);
+
+/** Computes a rotation matrix corresponding to a utheta rotation
+ * @param u a 3x1 vector containing a rotation in utheta notation 
+ * @returns an homogeneous matrix containing a rotation corresponding to u
+ */
+Eigen::Affine3d UThetaToAffine3d(const Eigen::Vector3d &u);
+
+/** Computes the direct exponential map for a twist acting during a time
+ * @param v a 6x1 twist vector in (t utheta) notation
+ * @param delta_t the time during which the twist v is applied
+ * @returns an homogeneous matrix that contains the displacement after applying the velocity v during the time interval delta_t
+ */
+Eigen::Affine3d direct_exponential_map(const Eigen::VectorXd &v, double delta_t);
+
+/** Queries tf for a transform and returns it as an eigen affine3d object 
+ * @param listener the tf listener object
+ * @param target the target frame name (t)
+ * @param source the source frame name (s)
+ * @param[out] tMs an homogeneous matrix describing the source frame in target coordinates
+ * @param timestamp the desired timestamp
+ * @param timeout the maximum time to wait for the transform
+ * @returns true if the transform exists, false otherwise
+ */
+bool getTransform(const tf::TransformListener &listener, const std::string &target, const std::string source, Eigen::Affine3d &tMs,
+                  const ros::Time &timestamp = ros::Time::now(), const ros::Duration &timeout = ros::Duration(5.0));
+
 
 } // namespace
 
