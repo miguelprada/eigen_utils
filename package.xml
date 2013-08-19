@@ -6,7 +6,7 @@
 
   <maintainer email="mprats@willowgarage.com">Mario Prats</maintainer>
 
-  <license>BSD</license>
+  <license>GPLv2</license>
 
   <url>http://ros.org/wiki/eigen_utils</url>
   
