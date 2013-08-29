@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>eigen_utils</name>
-  <version>1.0.1</version>
+  <version>1.0.2</version>
   <description>Useful math functions using Eigen</description>
 
   <maintainer email="marioprats@gmail.com">Mario Prats</maintainer>
