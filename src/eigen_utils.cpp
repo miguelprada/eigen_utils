@@ -38,10 +38,23 @@ namespace eigen_utils {
 
 void pseudoinverse(const Eigen::MatrixXd &M, Eigen::MatrixXd &Minv, double tolerance)
 {
+  Eigen::VectorXd S;
+  pseudoinverse(M, Minv, S, tolerance);
+}
+
+Eigen::MatrixXd pseudoinverse(const Eigen::MatrixXd &M, double tolerance)
+{
+  Eigen::MatrixXd Minv;
+  pseudoinverse(M, Minv, tolerance);
+  return Minv;
+}
+
+void pseudoinverse(const Eigen::MatrixXd &M, Eigen::MatrixXd &Minv, Eigen::VectorXd &S, double tolerance)
+{
   Eigen::JacobiSVD<Eigen::MatrixXd> svdOfM(M, Eigen::ComputeThinU | Eigen::ComputeThinV);
   const Eigen::MatrixXd U = svdOfM.matrixU();
   const Eigen::MatrixXd V = svdOfM.matrixV();
-  const Eigen::VectorXd S = svdOfM.singularValues();
+  S = svdOfM.singularValues();
 
   Eigen::VectorXd Sinv = S;
   double maxsv = 0 ;
@@ -58,10 +71,10 @@ void pseudoinverse(const Eigen::MatrixXd &M, Eigen::MatrixXd &Minv, double toler
   Minv = V * Sinv.asDiagonal() * U.transpose();
 }
 
-Eigen::MatrixXd pseudoinverse(const Eigen::MatrixXd &M, double tolerance)
+Eigen::MatrixXd pseudoinverse(const Eigen::MatrixXd &M, Eigen::VectorXd &S, double tolerance)
 {
   Eigen::MatrixXd Minv;
-  pseudoinverse(M, Minv, tolerance);
+  pseudoinverse(M, Minv, S, tolerance);
   return Minv;
 }
 
@@ -120,7 +133,7 @@ void transformToPoseVector(const Eigen::Affine3d &M, Eigen::VectorXd &pose)
   }
 }
 
-Eigen::VectorXd transformToPoseVector(const Eigen::Affine3d &M) 
+Eigen::VectorXd transformToPoseVector(const Eigen::Affine3d &M)
 {
   Eigen::VectorXd twist;
   transformToPoseVector(M, twist);

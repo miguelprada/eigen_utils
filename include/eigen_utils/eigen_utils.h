@@ -38,19 +38,35 @@
 
 namespace eigen_utils {
 
-/** Computes the pseudoinverse of a matrix via SVD 
+/** Computes the pseudoinverse of a matrix via SVD
  * @param M the input matrix
  * @param Minv[out] the output pseudoinverse matrix
  * @param tolerance Those singular values smaller than tolerance * max_singular_value are removed
  */
 void pseudoinverse(const Eigen::MatrixXd &M, Eigen::MatrixXd &Minv, double tolerance = 1.e-06);
 
-/** Computes the pseudoinverse of a matrix via SVD 
+/** Computes the pseudoinverse of a matrix via SVD
  * @param M the input matrix
  * @param tolerance Those singular values smaller than tolerance * max_singular_value are removed
  * @returns the output pseudoinverse matrix
  */
 Eigen::MatrixXd pseudoinverse(const Eigen::MatrixXd &M, double tolerance = 1.e-06);
+
+/** Computes the pseudoinverse of a matrix via SVD
+ * @param M the input matrix
+ * @param Minv[out] the output pseudoinverse matrix
+ * @param S[out] the singular values of the Jacobian matrix
+ * @param tolerance Those singular values smaller than tolerance * max_singular_value are removed
+ */
+void pseudoinverse(const Eigen::MatrixXd &M, Eigen::MatrixXd &Minv, Eigen::VectorXd &S, double tolerance = 1.e-06);
+
+/** Computes the pseudoinverse of a matrix via SVD
+ * @param M the input matrix
+ * @param S[out] the singular values of the Jacobian matrix
+ * @param tolerance Those singular values smaller than tolerance * max_singular_value are removed
+ * @returns the output pseudoinverse matrix
+ */
+Eigen::MatrixXd pseudoinverse(const Eigen::MatrixXd &M, Eigen::VectorXd &S, double tolerance = 1.e-06);
 
 /** Computes a pose vector in (t utheta) notation from an homogeneous transformation matrix
  * @param M an homogeneous transformation matrix
@@ -65,7 +81,7 @@ void transformToPoseVector(const Eigen::Affine3d &M, Eigen::VectorXd &pose);
 Eigen::VectorXd transformToPoseVector(const Eigen::Affine3d &M);
 
 /** Computes a rotation matrix corresponding to a utheta rotation
- * @param u a 3x1 vector containing a rotation in utheta notation 
+ * @param u a 3x1 vector containing a rotation in utheta notation
  * @returns an homogeneous matrix containing a rotation corresponding to u
  */
 Eigen::Affine3d UThetaToAffine3d(const Eigen::Vector3d &u);
@@ -77,7 +93,7 @@ Eigen::Affine3d UThetaToAffine3d(const Eigen::Vector3d &u);
  */
 Eigen::Affine3d direct_exponential_map(const Eigen::VectorXd &v, double delta_t);
 
-/** Queries tf for a transform and returns it as an eigen affine3d object 
+/** Queries tf for a transform and returns it as an eigen affine3d object
  * @param listener the tf listener object
  * @param target the target frame name (t)
  * @param source the source frame name (s)
